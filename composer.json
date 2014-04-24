@@ -1,0 +1,35 @@
+{
+    "name": "yepsua/rad-bundle",
+    "description": "YepsuaRADBundle Rapid Application Development for Symfony2 ",
+    "keywords": ["symfony2","RAD","admin","jQuery4PHP","Smartwig","SmarTwigBundle","Twig"],
+    "homepage": "http://www.yepsua.com",
+    "type": "symfony-bundle",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Omar Yepez",
+            "email": "omar.yepez@yepsua.com"
+        }
+    ],
+    "scripts": {
+        "post-install-cmd": [
+            "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::clearCache",
+            "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::installAssets"
+        ],
+        "post-update-cmd": [
+            "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::clearCache",
+            "Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::installAssets"
+        ]
+    },
+    "require": {
+		"yepsua/commons-bundle": "1.*",
+    },
+    "autoload": {
+        "psr-0": { "Yepsua\\RADBundle": "" }
+    },
+    "target-dir": "Yepsua/RADBundle",
+    "extra": {
+        "symfony-app-dir": "app",
+        "symfony-web-dir": "web"
+    }
+}

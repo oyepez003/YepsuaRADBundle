@@ -1,4 +1,4 @@
 YepsuaRADBundle
 ===============
 
-YepsuaRADBundle Rapid Application Development for Symfony2 
+YepsuaRADBundle Rapid Application Development for Symfony2
