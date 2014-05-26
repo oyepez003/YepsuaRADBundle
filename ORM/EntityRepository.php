@@ -30,6 +30,11 @@ class EntityRepository extends BaseEntityRepository{
         parent::__construct($em, $class);
     }
     
+    /**
+     * 
+     * @param type $withJoins
+     * @return \Doctrine\ORM\QueryBuilder
+     */
     protected function buildQuery($withJoins = true){
       $query =  DAO::buildQuery($this,static::QUERY_ENTITY_NAME);
       if($withJoins){

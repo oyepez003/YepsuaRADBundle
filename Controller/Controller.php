@@ -66,4 +66,17 @@ class Controller extends BaseController
     protected function translate($id, $parameters = array(), $domain = null , $locale = null){
       return $this->getTranslator()->trans($id, $parameters, $domain, $locale);
     }
+    
+    /**
+     * Gets the repository for a class.
+     *
+     * @param string $className
+     *
+     * @return \Doctrine\Common\Persistence\ObjectRepository
+     */
+    public function getRepository($className){
+      return $this->getDoctrine()
+                  ->getManager()
+                  ->getRepository($className);
+    }
 }
