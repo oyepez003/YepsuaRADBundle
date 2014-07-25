@@ -3,16 +3,17 @@
 /*
  * This file is part of the YepsuaRADBundle.
  *
- * (c) Omar Yepez <omar.yepez@yepsua.com>
- *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
 
 namespace Yepsua\RADBundle\ORM;
-use Yepsua\CommonsBundle\Persistence\Dao as DAO;
+
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 use Doctrine\ORM\EntityRepository as BaseEntityRepository;
+
+use Yepsua\CommonsBundle\Persistence\Dao as DAO;
 
 /**
  * EntityRepository
@@ -21,6 +22,7 @@ use Doctrine\ORM\EntityRepository as BaseEntityRepository;
 class EntityRepository extends BaseEntityRepository{
     
     const QUERY_ENTITY_NAME = 'undefined';
+    const REPOSITORY_NAMESPACE = 'undefined';
     
     protected function getLefJoinsAlias(){
         return array();
@@ -30,11 +32,6 @@ class EntityRepository extends BaseEntityRepository{
         parent::__construct($em, $class);
     }
     
-    /**
-     * 
-     * @param type $withJoins
-     * @return \Doctrine\ORM\QueryBuilder
-     */
     protected function buildQuery($withJoins = true){
       $query =  DAO::buildQuery($this,static::QUERY_ENTITY_NAME);
       if($withJoins){
@@ -62,8 +59,29 @@ class EntityRepository extends BaseEntityRepository{
      *
      * @return \Doctrine\ORM\EntityRepository The repository class.
      */
-    protected function getRepository($repoId){
-        return $this->getEntityManager()->getRepository($repoId);
+    protected function getRepository($repoId = null){
+        if($repoId === null){
+          $repo = $this->getRepository(static::REPOSITORY_NAMESPACE);
+        }else{
+          $repo = $this->getEntityManager()->getRepository($repoId);
+        }
+        return $repo;
     }
     
+    /**
+     * Returns a NotFoundHttpException.
+     *
+     * This will result in a 404 response code. Usage example:
+     *
+     *     throw $this->createNotFoundException('Page not found!');
+     *
+     * @param string    $message  A message
+     * @param \Exception $previous The previous exception
+     *
+     * @return NotFoundHttpException
+     */
+    public function createNotFoundException($message = 'msg.unable.to.find.entit', \Exception $previous = null)
+    {
+        return new NotFoundHttpException($this->translate($message), $previous);
+    }
 }
