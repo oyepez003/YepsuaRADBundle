@@ -110,7 +110,7 @@ class Controller extends BaseController
      * @param object $entity
      * @throws NotFoundHttpException
      */
-    public function throwNotFoundException($entity){
+    public function throwNotFoundException($entity = false){
       if (!$entity) {
         throw $this->createNotFoundException('msg.unable.to.find.entity');
       }
