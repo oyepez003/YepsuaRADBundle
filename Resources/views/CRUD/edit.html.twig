@@ -1,0 +1,99 @@
+{% set tdomain = translator_domain|default(null) %}
+{% set entity_name = entity_name is defined ? entity_name | capitalize : null %}
+{% set l_entity_name = entity_name is defined ? entity_name | lower : null %}
+{% set workspace_id = workspace_id|default('%sWorkspace'|format(l_entity_name)) %}
+
+{% set entity_label = "entity.label"|trans([],tdomain) %}
+{% set submit_button_options = submit_button_options|default({}) %}
+{% set btn_submit_class = submit_button_options.class|default('btnSubmit%1$s'|format(entity_name)) %}
+{% set grid_id = grid_id|default('%1$sGrid'|format(l_entity_name)) %}
+
+{% set update_route = routes.create|default('%1$s_update' |format(l_entity_name)) %}
+{% set update_route_path = paths.create|default(path(update_route, { "id": entity.id })) %}
+  
+{% set delete_route = routes.delete|default('%1$s_delete'|format(l_entity_name)) %}
+{% set delete_route_path = paths.delete|default(path(delete_route, { "id": entity.id })) %}
+
+{% set dlg_options =  dialog_options|default({}) %}
+{% set dlg_name = dlg_options.name|default('dlgEdit%1$s'|format(entity_name)) %}
+  
+{% set ajax_form_options =  ajax_form_options|default({}) %}  
+{% set ajax_form_id = ajax_form_options.id|default('frmEdit%1$s'|format(entity_name)) %}
+{% set ajax_form_method = ajax_form_options.method|default('PUT') %}
+  
+{% set del_ajax_form_options =  rc_delete_options|default({}) %}  
+{% set del_ajax_form_id = del_ajax_form_options.id|default('rcDelete%1$s'|format(entity_name)) %}
+{% set del_ajax_form_method = del_ajax_form_options.method|default('DELETE') %}  
+  
+{% set delete_button_options = delete_button_options|default({}) %}
+
+{% block dialog %}
+  {% ui_dialog width="500" widgetVar=dlg_name title="dlg.edit.title"|trans({'%name%': entity_label }) modal="true" 
+               close=js_function('$(this).dialog( "destroy" );$(this).remove();')
+               options=dlg_options
+  %}
+     <div style="width:100%">
+      {% block content %}
+        {% ajax_form id=ajax_form_id
+            update="#%1$s"|format(workspace_id)
+            action=update_route_path
+            method=ajax_form_method
+            beforeSubmit=js_function("$('.%1$s').attr('disabled',true);_%2$s = %2$s;" |format(btn_submit_class,dlg_name))
+            complete=js_function("jqXHR",("
+              if(jqXHR.status == 202){
+                _%1$s.wijdialog('destroy');
+                $(_%1$s).remove();
+              }
+              if (jqXHR.status == 200){
+                _%1$s.wijdialog('destroy');
+                $(_%1$s).remove();
+                $.pnotify('%3$s');
+                $('#%2$s').trigger('reloadGrid');
+              }")|format(dlg_name, grid_id, "msg.edit.success"|trans({'%name%': entity_label })))
+             options=ajax_form_options
+         %}
+
+         {% block form %}
+           {{ form_widget(form) }}
+         {% endblock form %}
+
+         {% block separator %}
+           <hr class="ui-widget-content">
+         {% endblock separator %}
+
+         {% block submit_button %}
+           {% ui_button class="crud-btn-submit %s" | format(btn_submit_class) type="submit" value="action.save"|trans options=submit_button_options %}
+         {% endblock submit_button %}
+       {% end_ajax_form %}
+
+       {% ajax_form id=del_ajax_form_id
+            update="#%1$s"|format(workspace_id)
+            action=delete_route_path
+            method=del_ajax_form_method
+            beforeSubmit=js_function("$('.%1$s').attr('disabled',true);"|format(btn_submit_class))
+            complete=js_function("jqXHR",("
+              if (jqXHR.status == 200){
+                $.pnotify('#%3$s');
+                _%1$s.wijdialog('destroy');
+                $('#%2$s').trigger('reloadGrid');
+              }")|format(dlg_name, grid_id, "msg.delete.success"|trans({'%name%': entity_label })))
+           options=del_ajax_form_options
+       %}
+
+         {% block delete_form %}
+           {{ form_widget(delete_form) }}
+         {% endblock delete_form %}
+
+         {% block delete_button %}
+           {% ui_button class="crud-btn-submit %s" | format(btn_submit_class) type="submit" 
+                        onclick="return confirm('%1$s')"|format("msg.delete.confirmation"|trans({'%name%': entity_label })) 
+                        value="action.delete"|trans 
+                        options=delete_button_options
+           %}
+
+         {% endblock delete_button %}
+       {% end_ajax_form %}
+      {% endblock content %}
+    </div>
+  {% end_ui_dialog %}
+{% endblock dialog %}

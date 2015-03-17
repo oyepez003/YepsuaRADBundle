@@ -1,0 +1,80 @@
+{% set tdomain = translator_domain|default(null) %}
+{% set entity_name = entity_name is defined ? entity_name | capitalize : null %}
+{% set l_entity_name = entity_name is defined ? entity_name | lower : null %}
+{% set workspace_id = workspace_id|default('%sWorkspace'|format(l_entity_name)) %}
+
+{% set entity_label = "entity.label"|trans([],tdomain) %}
+{% set submit_button_options = submit_button_options|default({}) %}
+{% set btn_submit_class = submit_button_options.class|default('btnSubmit%1$s'|format(entity_name)) %}
+{% set grid_id = grid_id|default('%1$sGrid'|format(l_entity_name)) %}
+  
+{% set edit_route = routes.edit|default('%1$s_edit'|format(l_entity_name)) %}
+{% set edit_route_path = paths.edit|default(path(edit_route, { "id": entity.id })) %}
+  
+{% set delete_route = routes.delete|default('%1$s_delete'|format(l_entity_name)) %}
+{% set delete_route_path = paths.delete|default(path(delete_route, { "id": entity.id })) %}
+  
+{% set edt_ajax_form_options =  rc_edit_options|default({}) %}  
+{% set edt_ajax_form_id = edt_ajax_form_options.id|default('rcEditAgain%1$s'|format(entity_name)) %}
+{% set edt_ajax_form_method = edt_ajax_form_options.method|default('GET') %}
+  
+{% set del_ajax_form_options =  rc_delete_options|default({}) %}
+{% set del_ajax_form_id = del_ajax_form_options.id|default('rcDelete%1$s'|format(entity_name)) %}
+{% set del_ajax_form_method = del_ajax_form_options.method|default('DELETE') %}
+  
+{% set dlg_options =  dialog_options|default({}) %}
+{% set dlg_name = dlg_options.name|default('dlgShow%1$s'|format(entity_name)) %}
+  
+{% set delete_button_options = delete_button_options|default({}) %}  
+  
+{% block dialog %}
+  {% ui_dialog width="500" widgetVar=dlg_name title="dlg.show.title"|trans({'%name%': entity_label}) modal="true"
+               close=js_function('$(this).dialog( "destroy" );$(this).remove();') 
+               options=dlg_options
+  %}
+
+      {% block content %}
+
+        {{ dump(entity) }} 
+
+      {% endblock content %}
+
+    {% block separator %}
+      <hr class="ui-widget-content">
+    {% endblock separator %}
+
+    {% block buttonset %}
+      {% ui_button class="crud-btn-submit" onclick="%s()"|format(edt_ajax_form_id) value="action.edit"|trans %}
+
+      {% remote_command update="#%1$s"|format(workspace_id)
+           beforeSend=js_function("%s.wijdialog('destroy');"|format(dlg_name))
+           type=edt_ajax_form_method
+           url=edit_route_path
+           name=edt_ajax_form_id
+           options=edt_ajax_form_options
+      %}
+
+      {% ajax_form id=del_ajax_form_id
+           update="#%1$s"|format(workspace_id)
+           action=delete_route_path
+           method=del_ajax_form_method
+           beforeSubmit=js_function("$('.%1$s').attr('disabled',true);"|format(btn_submit_class))
+           complete=js_function("jqXHR",("
+             if (jqXHR.status == 200){
+               $.pnotify('%3$s');
+               %1$s.wijdialog('destroy');
+               $('#%2$s').trigger('reloadGrid');
+             }")|format(dlg_name, grid_id, "msg.delete.success"|trans({'%name%': entity_label})))
+          options=del_ajax_form_options
+      %}
+
+        {{ form_widget(form) }}
+        {% ui_button class="crud-btn-submit %1$s"|format(btn_submit_class) type="submit" 
+                     onclick="return confirm('%1$s')"|format("msg.delete.confirmation"|trans({'%name%': entity_label })) 
+                     value="action.delete"|trans
+                     options=delete_button_options
+        %}
+      {% end_ajax_form %}
+    {% endblock buttonset %}
+  {% end_ui_dialog %}
+{% endblock dialog %}

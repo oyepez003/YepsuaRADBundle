@@ -1,0 +1,133 @@
+{% set tdomain = translator_domain|default(null) %}
+{% set entity_name = entity_name is defined ? entity_name | capitalize : null %}
+{% set l_entity_name = entity_name is defined ? entity_name | lower : null %}
+{% set workspace_id = workspace_id|default('%sWorkspace'|format(l_entity_name)) %}
+  
+{% set new = allow.new is not defined or allow.new == true %}
+{% set edit = allow.edit is not defined or allow.edit == true %}
+{% set show = allow.show is not defined or allow.show == true %}
+{% set delete = allow.delete is not defined or allow.delete == true %}
+  
+{% set new_route = routes.new|default('%1$s_new'|format(l_entity_name)) %}
+{% set edit_route = routes.edit|default('%1$s_edit'|format(l_entity_name)) %}
+{% set delete_route = routes.delete|default('%1$s_delete'|format(l_entity_name)) %}
+{% set show_route = routes.show|default('%1$s_show'|format(l_entity_name)) %}
+  
+{% set new_route_path = paths.new|default(path(new_route)) %}
+{% set edith_route_path = paths.edit|default(arg(path(edit_route, { "id": "'+$('#%1$s').jqGrid('getGridParam','selrow')+'"|format(grid.gridId)}) | raw_url_decode)) %}
+{% set delete_route_path = paths.delete|default(arg(path(delete_route, { "id": "'+ $('#%1$s').jqGrid('getGridParam','selarrrow')+'"|format(grid.gridId)}) | raw_url_decode)) %}
+{% set show_route_path = paths.show|default(arg(path(show_route, { "id": "'+ SmarTwig.grid.selectedRow('#%1$s')+'"|format(grid.gridId)}) | raw_url_decode)) %}
+  
+{% set rc_new_options = rc_new_options|default({}) %}
+{% set rc_edit_options = rc_edit_options|default({}) %}
+{% set rc_delete_options = rc_delete_options|default({}) %}
+{% set rc_show_options = rc_show_options|default({}) %}
+  
+{% set rc_new_name = rc_new_options.name|default('rcNew%1$s'|format(entity_name)) %}
+{% set rc_edit_name = rc_edit_options.name|default('rcEdit%1$s'|format(entity_name)) %}
+{% set rc_delete_name = rc_delete_options.name|default('rcDelete%1$s'|format(entity_name)) %}
+{% set rc_show_name = rc_show_options.name|default('rcShow%1$s'|format(entity_name)) %}
+  
+{% set rc_new_method = rc_new_options.method|default('GET') %}
+{% set rc_edit_method = rc_edit_options.method|default('GET') %}
+{% set rc_delete_method = rc_delete_options.method|default('POST') %}
+{% set rc_show_method = rc_show_options.method|default('GET') %}  
+
+{% set mnu_popup_options = mnu_popup_options|default({}) %}
+{% set mnu_popup_id = mnu_popup_options.id|default('popUp%1$s'|format(entity_name)) %}
+{% set btn_popup_id = btn_popup_id|default('btnPopUp%1$s'|format(entity_name)) %}
+
+{% block content %}
+  {% block header %}
+  <div class="crud_header">
+    <div>
+      <span class="crud_header_title">{% block title %}{{"list.view.title"|trans([],tdomain)}}{% endblock %}</span>
+    </div>
+    <table class="crud_header_buttonset">
+      <tr>
+        <td>
+          {% block buttonset %}
+            {% if new %}
+            <button type="button" onclick="{{rc_new_name}}()" class="btn btn-danger btn-sm">{{ 'action.new'|trans }}</button>
+            {% endif %}
+            {% if (edit or show or delete) %}
+            <button id="{{btn_popup_id}}"  onclick="{{mnu_popup_id}}.wijpopup('show')" type="button" class="btn btn-primary btn-sm">{{ 'menu.more'|trans }}<span class="caret"></span></button>
+
+            {% ui_popup  autoHide=true
+                         widgetVar=mnu_popup_id
+                         position={'of':jQuery("#%1$s"|format(btn_popup_id)),
+                                   'offset':'0 0'} 
+                         options=mnu_popup_options
+            %}
+
+              {% ui_panel class="dropdown-menu-panel" %}
+                {% block menu %}
+                <ul onclick="{{mnu_popup_id}}.wijpopup('hide')" class="dropdown-menu dropdown-menu-visible" role="menu">
+                  {% block menu_items %}
+                    {% if edit %}
+                    <li role="presentation"><a role="menuitem" tabindex="-1" onclick="{{rc_edit_name}}()" href="#">{{ 'action.edit'|trans }}</a></li>
+                    {% endif %}
+                    {% if show %}
+                    <li role="presentation"><a role="menuitem" tabindex="-1" onclick="{{rc_show_name}}()" href="#">{{ 'action.show'|trans }}</a></li>
+                    {% endif %}
+                    {% if delete %}
+                    <li role="presentation" class="divider"></li>
+                    <li role="presentation"><a role="menuitem" tabindex="-1" onclick="{{rc_delete_name}}()" href="#">{{ 'action.delete'|trans }}</a></li>
+                    {% endif %}
+                  {% endblock menu_items %}
+                </ul>
+                {% endblock menu %}
+              {% end_ui_panel %}
+
+            {% end_ui_popup %}
+            {% endif %}
+          {% endblock buttonset %}  
+        </td>
+      </tr>
+    </table>
+  </div>
+  {% endblock header %}
+  
+  {% block body %}
+    {{ component_render(grid) }}
+  {% endblock body %}
+  
+  {% block workspace %}
+  <div id="{{workspace_id}}"></div>
+  {% endblock workspace %}
+  
+  {% block remote_commands %}
+  
+  {% remote_command rendered=new update="#%1$s"|format(workspace_id) type=rc_new_method url=new_route_path
+                    name=rc_new_name
+                    options=rc_new_options
+  %}
+
+  {% remote_command rendered=edit update="#%1$s"|format(workspace_id) type=rc_edit_method 
+                    beforeSend=js_function("return SmarTwig.grid.hasSelectedRow('#%1$s','%2$s')"|format(grid.gridId, "msg.batch.empty"|trans)) 
+                    url=edith_route_path  
+                    name=rc_edit_name
+                    options=rc_edit_options
+  %}
+
+  {% remote_command rendered=delete update="#%1$s"|format(workspace_id)
+                    beforeSend=js_function("return SmarTwig.grid.hasSelectedRow('#%1$s','%2$s') && confirm('%3$s')"|format(grid.gridId,"msg.batch.empty"|trans,"msg.batch.delete.confirmation"|trans))
+                    complete=js_function("jqXHR",("
+                      if (jqXHR.status == 200){
+                        $.pnotify('%2$s');
+                        $('#%1$s').trigger('reloadGrid')
+                      }")|format(grid.gridId,"msg.batch.delete.success"|trans))
+                    url=delete_route_path
+                    name=rc_delete_name 
+                    options=rc_delete_options
+  %}
+
+  {% remote_command rendered=show update="#%1$s"|format(workspace_id) type=rc_show_method
+                    beforeSend=js_function("return SmarTwig.grid.hasSelectedRow('#%1$s','%2$s')"|format(grid.gridId,"msg.batch.empty"|trans))
+                    url=show_route_path 
+                    name=rc_show_name 
+                    options=rc_show_options
+  %}
+  {% endblock remote_commands %}
+  {% block footer %}{% endblock footer %}
+{% endblock content %}
