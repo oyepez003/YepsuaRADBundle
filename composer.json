@@ -22,7 +22,7 @@
         ]
     },
     "require": {
-		"yepsua/commons-bundle": "1.1.x-dev"
+        "yepsua/commons-bundle": "1.1.x-dev"
     },
     "autoload": {
         "psr-0": { "Yepsua\\RADBundle": "" }
